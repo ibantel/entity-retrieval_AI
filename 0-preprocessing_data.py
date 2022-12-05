@@ -1,4 +1,4 @@
-# """ This file
+""" Overview
 #       1) reads data from ./data/raw/Newsletters - Morning tech.json and
 #                     from ./data/raw/Rapporteurs - AI act bill.json
 #       2) searches for mentions of the provided rapporteurs that are
@@ -6,7 +6,8 @@
 #       3) exports
 #           the mention_counts (by date, mention type and rapporteur) and
 #           the rapporteur names for later visualization
-# """
+#
+"""
 
 #%% imports
 from bs4 import BeautifulSoup
