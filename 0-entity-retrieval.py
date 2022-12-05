@@ -80,26 +80,34 @@ if False:
     # use --> df['new_col'] =  df['old_col'].str.findall(r'>([A-Z][^<]+)<')
 
 if True:  # attempt #3: extract paragraphs (s. above) using findall to extract ALL paragraphs
-    matchstring_AI_paragraph: str = r'(<p>(?:(?!<p>).)*?(artificial intelligence|\sAI(\s|\.)|ARTIFICIAL INTELLIGENCE(?!\s*\<\/span\>)).+?<\/p>)'
-    newsletters['html_AI_p_matches'] = newsletters['html'].str.findall(matchstring_AI_paragraph)
+    matchstring_AI_paragraph: str     = r'(<p>(?:(?!<p>).)*?((A|a)rtificial (I|i)ntelligence|\sAI(\s|\.)|ARTIFICIAL INTELLIGENCE(?!\s*\<\/span\>)).+?<\/p>)'
+    matchstring_AI_act_paragraph: str = r'(<p>(?:(?!<p>).)*?(((A|a)rtificial (I|i)ntelligence|\sAI(\s|\.)|ARTIFICIAL INTELLIGENCE\s+(A|a)ct(?!\s*\<\/span\>))).+?<\/p>)'
+
+    newsletters['html_AI_p_matches']    = newsletters['html'].str.findall(matchstring_AI_paragraph)
+    newsletters['html_AIact_p_matches'] = newsletters['html'].str.findall(matchstring_AI_act_paragraph)
     # find all occurences of "AI" (etc.; except in tables [i.e. headlines]) and get all surrounding paragraphs --> list of tuples (len: 3); first elemen is text
 
-    newsletters['html_AI_p_raw'] = newsletters['html_AI_p_matches'].apply(lambda cell_list: [tup[0] for tup in cell_list])
+    newsletters['html_AI_p_raw']    = newsletters['html_AI_p_matches'].apply(lambda cell_list: [tup[0] for tup in cell_list])
+    newsletters['html_AIact_p_raw'] = newsletters['html_AIact_p_matches'].apply(lambda cell_list: [tup[0] for tup in cell_list])
     # get first element from each tuple --> list of strings, each containing the paragraph of interest
 
-    newsletters['html_AI_p_raw'] = [' '.join(map(str, l)) for l in newsletters['html_AI_p_raw']]
+
+    newsletters['html_AI_p_raw'] =    [' '.join(map(str, l)) for l in newsletters['html_AI_p_raw']]
+    newsletters['html_AIact_p_raw'] = [' '.join(map(str, l)) for l in newsletters['html_AIact_p_raw']]
     # transform each cell containing a list of strings to one string per cell
 
-    newsletters['html_AI_p_raw'] = newsletters['html_AI_p_raw'].apply(BeautifulSoup)  # transform to bs object
+    newsletters['html_AI_p_raw'] =    newsletters['html_AI_p_raw'].apply(BeautifulSoup)  # transform to bs object
+    newsletters['html_AIact_p_raw'] = newsletters['html_AIact_p_raw'].apply(BeautifulSoup)  # transform to bs object
 
     # FLAG FOR POTENTIAL EXTENSION (later): split here on </p><p> into paragraphs and make each paragraph one df row
 
-    newsletters['AI_paragraphs'] = newsletters['html_AI_p_raw'].apply(BeautifulSoup.get_text)  # remove HTML tags
+    newsletters['AI_paragraphs'] =    newsletters['html_AI_p_raw'].apply(BeautifulSoup.get_text)  # remove HTML tags
+    newsletters['AIact_paragraphs'] = newsletters['html_AIact_p_raw'].apply(BeautifulSoup.get_text)  # remove HTML tags
 
     # clean AI_paragraphs: replace (\sAI(\.|\s)|ARTIFICIAL INTELLIGENCE|artificial intelligence) with artificial_intelligence
     matchstring_AI_term = r"(\sAI(\.|\s)|ARTIFICIAL INTELLIGENCE|artificial intelligence)"
-    newsletters['AI_paragraphs'] = newsletters['AI_paragraphs'].str.replace(matchstring_AI_term,
-                                                                            " artificial_intelligence ", regex=True)
+    newsletters['AI_paragraphs'] =    newsletters['AI_paragraphs'].str.replace(matchstring_AI_term, " artificial_intelligence ", regex=True)
+    newsletters['AIact_paragraphs'] = newsletters['AIact_paragraphs'].str.replace(matchstring_AI_term, " artificial_intelligence ", regex=True)
 
     del matchstring_AI_paragraph, matchstring_AI_term, newsletters['html_AI_p_raw']
 
@@ -107,7 +115,7 @@ if True:  # attempt #3: extract paragraphs (s. above) using findall to extract A
 newsletters['general_text'] = newsletters['html'].apply(BeautifulSoup, "lxml")  # transform to bs object
 newsletters['general_text'] = newsletters['general_text'].apply(BeautifulSoup.get_text)  # remove HTML tags
 
-newsletters = newsletters[['date', 'general_text',  'AI_paragraphs']]
+newsletters = newsletters[['date', 'general_text',  'AI_paragraphs', 'AIact_paragraphs']]
 
 #%% prepare entity recognition of rapporteurs: load & preprocess rapporteurs
 rapporteurs: pd.DataFrame = pd.read_json("./data/raw/Rapporteurs - AI act bill.json")
@@ -130,9 +138,11 @@ del rapporteurs, k
 #%% entity recognition from the other json: how often are those entities mentioned? (i.e. the different people)
 
 newsletters['AI_paragraphs_spacy'] = [doc for doc in nlp.pipe(newsletters['AI_paragraphs'].tolist())]  # convert to spacy object
+newsletters['AIact_paragraphs_spacy'] = [doc for doc in nlp.pipe(newsletters['AIact_paragraphs'].tolist())]  # convert to spacy object
 newsletters['general_text_spacy'] = [doc for doc in nlp.pipe(newsletters['general_text'].tolist())]  # convert to spacy object
 
 type(newsletters.at[157233, 'AI_paragraphs_spacy']) # check that cell contains a spaCy Doc object
+type(newsletters.at[157233, 'AIact_paragraphs_spacy']) # check that cell contains a spaCy Doc object
 type(newsletters.at[157233, 'general_text_spacy']) # check that cell contains a spaCy Doc object
 
 # prepare patterns from rapporteur names
@@ -162,10 +172,11 @@ for pat in patterns:
     #   name & last_name of MEP as match patterns
 
 # apply mapper
-newsletters['rapporteur_matches_AI_paragraphs'] = newsletters['AI_paragraphs_spacy'].apply(matcher_meps)  # match patterns
-newsletters['rapporteur_matches_overall'] =       newsletters['general_text_spacy'].apply(matcher_meps)  # match patterns
+newsletters['rapporteur_matches_AI_paragraphs']    = newsletters['AI_paragraphs_spacy'].apply(matcher_meps)  # match patterns
+newsletters['rapporteur_matches_AIact_paragraphs'] = newsletters['AIact_paragraphs_spacy'].apply(matcher_meps)  # match patterns
+newsletters['rapporteur_matches_overall']          = newsletters['general_text_spacy'].apply(matcher_meps)  # match patterns
 
-del k, mep_ids_raw, p_lastname, p_name, nlp, matcher_meps, patterns, pat, rapporteurs_dict
+del k, mep_ids_raw, p_lastname, p_name, nlp, matcher_meps, patterns, pat
 
 #%% aggregate and validate entity matches
 
@@ -177,20 +188,29 @@ if True:  # option 1: one column per rapporteur, with counts of occurences
     # rename columns
     newsletters = newsletters.rename(columns={k: str(v) + "_AIpar" for k, v in mep_column_mapper.items()})
 
+    # aggregate matches from AI paragraphs
+    newsletters = newsletters.join(newsletters['rapporteur_matches_AIact_paragraphs'].apply(
+        count_tup_first_values, args=(mep_ids,)))  # extract values & rejoin
+
+    # rename columns
+    newsletters = newsletters.rename(columns={k: str(v) + "_AIactpar" for k, v in mep_column_mapper.items()})
+
     # aggregate matches from general paragraphs
     newsletters = newsletters.join(newsletters['rapporteur_matches_overall'].apply(
         count_tup_first_values, args=(mep_ids,)))  # extract values & rejoin
 
     newsletters = newsletters.rename(columns={k: str(v) + "_total" for k, v in mep_column_mapper.items()})
 
-    newsletters_pivoting = newsletters.drop(columns=['general_text', 'AI_paragraphs', 'AI_paragraphs_spacy',
-                                                     'rapporteur_matches_overall', 'rapporteur_matches_AI_paragraphs',
-                                                     'general_text_spacy'])
+    newsletters_pivoting = newsletters.drop(columns=['general_text', 'general_text_spacy', 'rapporteur_matches_overall',
+                                                     'AI_paragraphs', 'AI_paragraphs_spacy', 'rapporteur_matches_AI_paragraphs',
+                                                     'AIact_paragraphs', 'AIact_paragraphs_spacy', 'rapporteur_matches_AIact_paragraphs'
+                                                     ])
 
-    for rapp in ['solís_pérez', 'cutajar', 'kolaja', 'maydell', 'benifei', 'tudorache', 'voss', 'clune', 'hahn', 'ernst',
-                 'van_sparrentak', 'lacapelle', 'otowski', 'konečná', 'vitanov', 'lagodinsky', 'rooken', 'madison']:
-        newsletters_pivoting[rapp + "_nonAIpar"] = \
-            newsletters_pivoting[rapp + "_total"] - newsletters_pivoting[rapp + "_AIpar"]
+    if False:
+        for rapp in ['solís_pérez', 'cutajar', 'kolaja', 'maydell', 'benifei', 'tudorache', 'voss', 'clune', 'hahn', 'ernst',
+                     'van_sparrentak', 'lacapelle', 'otowski', 'konečná', 'vitanov', 'lagodinsky', 'rooken', 'madison']:
+            newsletters_pivoting[rapp + "_nonAIpar"] = \
+                newsletters_pivoting[rapp + "_total"] - newsletters_pivoting[rapp + "_AIpar"]
 
     newsletters_pivoted: pd.DataFrame = pd.melt(newsletters_pivoting, id_vars=['date'],
                                                 value_vars=[col for col in newsletters_pivoting.drop(columns='date').columns],
@@ -199,7 +219,8 @@ if True:  # option 1: one column per rapporteur, with counts of occurences
 
     newsletters_pivoted[['rapporteur', 'topic']] =\
         newsletters_pivoted['rapporteur']\
-            .str.replace("_AIpar", " AI")\
+            .str.replace("_AIpar", " AI") \
+            .str.replace("_AIactpar", " AIact") \
             .str.replace("_nonAIpar", " nonAI")\
             .str.replace("_total", " total")\
             .str.split(expand=True)
