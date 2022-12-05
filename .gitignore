@@ -3,8 +3,6 @@
 *.json
 *.csv
 *.pdf
-.Rhistory
-entity-retrieval_AI.Rproj
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -137,4 +135,4 @@ dmypy.json
 .pyre/
 .Rproj.user
 *.Rproj
-*.Rproj
+.Rhistory
