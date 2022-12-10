@@ -6,6 +6,7 @@
 *.txt
 *.png
 output/
+data/
 *.html
 /helpers/dataset_description.txt
 
