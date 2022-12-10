@@ -31,7 +31,7 @@ theme_custom_rapp <- function(){
       
       plot.caption = element_text(           #caption
         family = font,            #font family
-        size = 9,                 #font size
+        size = 10,                 #font size
         hjust = 1),               #right align
       
       axis.title = element_text(             #axis titles
