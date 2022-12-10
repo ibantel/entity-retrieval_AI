@@ -218,6 +218,6 @@ p5_top_rap_terms_plotly <- ggplot(data=term.rap_top1, aes(x=count, y=rapporteur_
 
 # save plotly
 plotly::ggplotly(p5_top_rap_terms_plotly, tooltip="text") %>% 
-  htmlwidgets::saveWidget(., file="5a_terms-topterms-rapporteur.html")
+  htmlwidgets::saveWidget(., file="./output/5a_terms-topterms-rapporteur.html")
 
-rm(p5_top_rap_terms, term.top1000, rap.printnames, dataset_description, term.rap_top1, p5_top_rap_terms_plotly, theme_custom_rapp)
+rm(p5_top_rap_terms, rap.printnames, dataset_description, term.rap_top1, p5_top_rap_terms_plotly, theme_custom_rapp)
