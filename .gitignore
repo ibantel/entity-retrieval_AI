@@ -4,6 +4,10 @@
 *.csv
 *.pdf
 *.txt
+*.png
+output/
+*.html
+/helpers/dataset_description.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
